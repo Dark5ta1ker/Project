@@ -10,22 +10,20 @@ rooms = [
 
 @app.route('/api/rooms', methods=['GET'])
 def get_rooms():
+    """Возвращает список всех номеров."""
     return jsonify(rooms)
-
-@app.route('/api/rooms/<int:room_id>', methods=['GET'])
-def get_room(room_id):
-    room = next((r for r in rooms if r["id"] == room_id), None)
-    if room:
-        return jsonify(room)
-    return jsonify({"error": "Room not found"}), 404
 
 @app.route('/api/rooms', methods=['POST'])
 def add_room():
+    """Добавляет новый номер."""
     data = request.json
+    if not data or 'number' not in data or 'type' not in data:
+        return jsonify({"error": "Invalid data"}), 400
+
     new_room = {
         "id": len(rooms) + 1,
-        "number": data.get("number"),
-        "type": data.get("type"),
+        "number": data["number"],
+        "type": data["type"],
         "available": data.get("available", True),
     }
     rooms.append(new_room)
