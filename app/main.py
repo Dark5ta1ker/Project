@@ -1,10 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from app.error_handlers import register_error_handlers  # Абсолютный импорт
 
 app = Flask(__name__)
 
 # Настройка подключения к PostgreSQL
-DB_HOST = 'db'  # Если Docker, используйте 'db'
+DB_HOST = 'db'
 DB_NAME = 'hotel_db'
 DB_USER = 'hotel_user'
 DB_PASSWORD = 'hotel_password'
