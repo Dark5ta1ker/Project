@@ -9,22 +9,23 @@ class LoginWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.ui = Ui_LoginWindow()
         self.ui.setupUi(self)
-        self.accepted = False
+        self.accepted = False  # Флаг успешной авторизации
         self.setWindowTitle("Авторизация")
         self.ui.input_but.clicked.connect(self.handle_login)
 
     def handle_login(self):
-        #проверка логина и пароля
-        #   if self.ui.log_input.text() == "admin" and self.ui.pass_input.text() == "123":
-        #       self.accepted = True
-        #       self.close()
-        #   else:
-        #       QtWidgets.QMessageBox.warning(self, "ERROR", "Неверный логин или пароль")
-        
-        self.accepted = True
-        self.close()
+        # Проверка логина и пароля
+        if self.ui.log_input.text() == "admin" and self.ui.pass_input.text() == "123":
+            self.accepted = True
+            self.close()  # Закрываем окно авторизации
+        else:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный логин или пароль")
 
-#главный экран
+    def closeEvent(self, event):
+        # Если окно закрывается, а авторизация не пройдена, завершаем приложение
+        if not self.accepted:
+            sys.exit(0)
+        event.accept()
 
 # Главное окно
 class MainWindow(QtWidgets.QMainWindow):
@@ -38,12 +39,14 @@ class MainWindow(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
 
+    # Отображаем окно авторизации
     login = LoginWindow()
     login.show()
 
-    #цикл только на login окне
+    # Запускаем цикл событий
     app.exec_()
 
+    # Если авторизация успешна, открываем главное окно
     if login.accepted:
         main_window = MainWindow()
         main_window.show()
