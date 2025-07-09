@@ -1,19 +1,20 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from app.error_handlers import register_error_handlers
-from app.logger_config import setup_logger  # Импортируем настройку логгера
+from dotenv import load_dotenv
+import os
 
-# Настройка логгера
-logger = setup_logger()
+# Загрузка переменных окружения из .env
+load_dotenv()
+
+# Получение переменных окружения
+DB_HOST = os.getenv('DB_HOST')
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 app = Flask(__name__)
 
 # Настройка подключения к PostgreSQL
-DB_HOST = 'db'
-DB_NAME = 'hotel_db'
-DB_USER = 'hotel_user'
-DB_PASSWORD = 'hotel_password'
-
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -29,50 +30,34 @@ class Room(db.Model):
 
 @app.route('/api/rooms', methods=['GET'])
 def get_rooms():
-    logger.info("GET request received for /api/rooms")
-    try:
-        rooms = Room.query.all()
-        logger.debug(f"Rooms retrieved: {len(rooms)}")
-        return jsonify([{
-            "id": room.id,
-            "number": room.number,
-            "type": room.type,
-            "available": room.available
-        } for room in rooms])
-    except Exception as e:
-        logger.error(f"Error retrieving rooms: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    rooms = Room.query.all()
+    return jsonify([{
+        "id": room.id,
+        "number": room.number,
+        "type": room.type,
+        "available": room.available
+    } for room in rooms])
 
 @app.route('/api/rooms', methods=['POST'])
 def add_room():
-    logger.info("POST request received for /api/rooms")
-    try:
-        data = request.json
-        if not data or 'number' not in data or 'type' not in data:
-            logger.warning("Invalid data received: %s", data)
-            return jsonify({"error": "Invalid data"}), 400
+    data = request.json
+    if not data or 'number' not in data or 'type' not in data:
+        return jsonify({"error": "Invalid data"}), 400
 
-        new_room = Room(
-            number=data["number"],
-            type=data["type"],
-            available=data.get("available", True)
-        )
-        db.session.add(new_room)
-        db.session.commit()
+    new_room = Room(
+        number=data["number"],
+        type=data["type"],
+        available=data.get("available", True)
+    )
+    db.session.add(new_room)
+    db.session.commit()
 
-        logger.info(f"New room added: {new_room.number}")
-        return jsonify({
-            "id": new_room.id,
-            "number": new_room.number,
-            "type": new_room.type,
-            "available": new_room.available
-        }), 201
-    except Exception as e:
-        logger.error(f"Error adding room: {e}")
-        return jsonify({"error": "Internal server error"}), 500
-
-# Регистрация обработчиков ошибок
-register_error_handlers(app)
+    return jsonify({
+        "id": new_room.id,
+        "number": new_room.number,
+        "type": new_room.type,
+        "available": new_room.available
+    }), 201
 
 if __name__ == '__main__':
     with app.app_context():
