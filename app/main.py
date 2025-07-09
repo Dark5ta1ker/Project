@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 from app.error_handlers import register_error_handlers
 from app.logger_config import setup_logger  # Импортируем настройку логгера
-
+ 
 # Настройка логгера
 logger = setup_logger()
 
