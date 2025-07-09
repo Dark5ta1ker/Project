@@ -2,6 +2,11 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
+from app.error_handlers import register_error_handlers
+from app.logger_config import setup_logger  # Импортируем настройку логгера
+
+# Настройка логгера
+logger = setup_logger()
 
 # Загрузка переменных окружения из .env
 load_dotenv()
@@ -58,6 +63,9 @@ def add_room():
         "type": new_room.type,
         "available": new_room.available
     }), 201
+
+# Регистрация обработчиков ошибок
+register_error_handlers(app)
 
 if __name__ == '__main__':
     with app.app_context():
