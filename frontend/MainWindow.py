@@ -54,9 +54,9 @@ class Ui_MainWindow(object):
         # Фильтры
         filter_layout = QtWidgets.QGridLayout()
         self.status_combo = QtWidgets.QComboBox()
-        self.status_combo.addItems(["свободен", "занят", "обслуживание"])
+        self.status_combo.addItems(["свободен", "занят", "обслуживание", "Все"])
         self.guests_combo = QtWidgets.QComboBox()
-        self.guests_combo.addItems(["1", "2", "3"])
+        self.guests_combo.addItems(["1", "2", "3", "Все"])
         self.check_in_date = QtWidgets.QDateEdit(calendarPopup=True)
         self.check_out_date = QtWidgets.QDateEdit(calendarPopup=True)
         self.search_button = QtWidgets.QPushButton("Найти")
