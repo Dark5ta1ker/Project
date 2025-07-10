@@ -115,6 +115,7 @@ class Ui_MainWindow(object):
 
         # Таблица для отображения номеров
         self.tableView = QtWidgets.QTableView(tab)
+        self.tableView.verticalHeader().setVisible(False)
         self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tableView.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.tableView.horizontalHeader().setStretchLastSection(True)
@@ -124,6 +125,22 @@ class Ui_MainWindow(object):
 
         # Подключение кнопки "Найти"
         self.search_button.clicked.connect(self.fetch_rooms_data)
+        self.search_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0C5FFF;
+                color: white;
+                font: bold 11pt 'Arial';
+                padding: 8px 20px;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #084ED6;
+            }
+            QPushButton:pressed {
+                background-color: #063AB2;
+            }
+        """)
 
     def setup_service_tab(self, tab):
         """Настройка вкладки 'Обслуживание'."""
@@ -131,6 +148,7 @@ class Ui_MainWindow(object):
 
         # Таблица для отображения данных об обслуживании
         self.tableView_2 = QtWidgets.QTableView(tab)
+        self.tableView_2.verticalHeader().setVisible(False)
         self.tableView_2.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tableView_2.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.tableView_2.horizontalHeader().setStretchLastSection(True)
