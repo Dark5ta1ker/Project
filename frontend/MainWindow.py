@@ -1,137 +1,106 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import requests
+import traceback
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1080, 720)  # Уменьшен размер по умолчанию
-        MainWindow.setStyleSheet("background-color: white;")
+        MainWindow.resize(1200, 800)
+        MainWindow.setStyleSheet("""
+            QMainWindow {
+                background-color: #f5f5f5;
+            }
+        """)
+
         self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setStyleSheet("background-color: white;")
         self.centralwidget.setObjectName("centralwidget")
+        self.main_window = MainWindow
 
-        # Основная вертикальная компоновка
         main_layout = QtWidgets.QVBoxLayout(self.centralwidget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(15)
 
-        # Заголовок
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setStyleSheet("""
-            background-color: #0C5FFF;
-            color: white;
-            font: bold 16pt 'Arial';
+        self.header = QtWidgets.QLabel("Система управления отелем")
+        self.header.setStyleSheet("""
+            QLabel {
+                background-color: #0C5FFF;
+                color: white;
+                font: bold 18pt 'Arial';
+                padding: 15px;
+                border-radius: 5px;
+            }
         """)
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setText("Система управления отелем")
-        self.label.setFixedHeight(60)  # Фиксированная высота заголовка
-        main_layout.addWidget(self.label)
+        self.header.setAlignment(QtCore.Qt.AlignCenter)
+        self.header.setFixedHeight(70)
+        main_layout.addWidget(self.header)
 
-        # Табы
-        self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
+        self.tabWidget = QtWidgets.QTabWidget()
         self.tabWidget.setStyleSheet("""
-            font: bold 12pt 'Arial';
-            background-color: rgb(255, 255, 255);
-            border-color: rgb(255, 85, 127);
+            QTabWidget::pane {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background: white;
+            }
+            QTabBar::tab {
+                background: #e0e0e0;
+                padding: 8px 15px;
+                border: 1px solid #ddd;
+                border-bottom: none;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+            }
+            QTabBar::tab:selected {
+                background: white;
+                border-bottom: 1px solid white;
+            }
         """)
-        self.tabWidget.setObjectName("tabWidget")
+
+        self.setup_rooms_tab()
+        self.setup_service_tab()
+
         main_layout.addWidget(self.tabWidget)
-
-        # Вкладка "Номера"
-        self.rooms = QtWidgets.QWidget()
-        self.setup_rooms_tab(self.rooms)
-        self.tabWidget.addTab(self.rooms, "Номера")
-
-        # Вкладка "Обслуживание"
-        self.service = QtWidgets.QWidget()
-        self.setup_service_tab(self.service)
-        self.tabWidget.addTab(self.service, "Обслуживание")
-
         MainWindow.setCentralWidget(self.centralwidget)
 
-    def setup_rooms_tab(self, tab):
-        """Настройка вкладки 'Номера'."""
-        layout = QtWidgets.QVBoxLayout(tab)
+    def setup_rooms_tab(self):
+        self.rooms_tab = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(self.rooms_tab)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(15)
 
-        # Фильтры
+        filter_panel = QtWidgets.QGroupBox("Фильтры поиска")
+        filter_panel.setStyleSheet("""
+            QGroupBox {
+                font: bold 12pt 'Arial';
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+            }
+        """)
+
         filter_layout = QtWidgets.QGridLayout()
-        self.status_combo = QtWidgets.QComboBox()
-        self.status_combo.addItems(["свободен", "занят", "обслуживание", "Все"])
-        self.guests_combo = QtWidgets.QComboBox()
-        self.guests_combo.addItems(["1", "2", "3", "Все"])
-        self.check_in_date = QtWidgets.QDateEdit(calendarPopup=True)
-        self.check_out_date = QtWidgets.QDateEdit(calendarPopup=True)
-        self.search_button = QtWidgets.QPushButton("Найти")
+        filter_layout.setContentsMargins(15, 20, 15, 15)
+        filter_layout.setHorizontalSpacing(20)
+        filter_layout.setVerticalSpacing(15)
 
-        # Стили для фильтров
-        common_input_style = """
-            QComboBox, QDateEdit {
-                background-color: white;
-                border: 1px solid #D9D9D9;
-                padding: 4px;
-                font: 10pt 'Arial';
-            }
-        """
-        calendar_style = """
-            QCalendarWidget {
-                background-color: white;
-                border: 1px solid #D9D9D9;
-                font: 10pt 'Arial';
-                color: black;
-            }
-            QCalendarWidget QToolButton {
-                background-color: white;
-                color: black;
-                font: bold 10pt 'Arial';
-                border: none;
-                margin: 4px;
-            }
-            QCalendarWidget QAbstractItemView {
-                background-color: white;
-                selection-background-color: #0C5FFF;
-                selection-color: white;
-                gridline-color: #D9D9D9;
-            }
-        """
+        self.status_combo = self.create_combo_box(["Все", "Свободен", "Занят", "На обслуживании"])
+        self.guests_combo = self.create_combo_box(["1", "2", "3", "4+"])
 
-        self.status_combo.setStyleSheet(common_input_style)
-        self.guests_combo.setStyleSheet(common_input_style)
-        self.check_in_date.setStyleSheet(common_input_style)
-        self.check_out_date.setStyleSheet(common_input_style)
-        self.check_in_date.setCalendarPopup(True)
-        self.check_out_date.setCalendarPopup(True)
-        self.check_in_date.calendarWidget().setStyleSheet(calendar_style)
-        self.check_out_date.calendarWidget().setStyleSheet(calendar_style)
+        self.check_in_date = self.create_date_edit()
+        self.check_out_date = self.create_date_edit()
+        self.check_out_date.setDate(QtCore.QDate.currentDate().addDays(1))
 
-        filter_layout.addWidget(QtWidgets.QLabel("Статус"), 0, 0)
-        filter_layout.addWidget(self.status_combo, 1, 0)
-        filter_layout.addWidget(QtWidgets.QLabel("Число гостей"), 0, 1)
-        filter_layout.addWidget(self.guests_combo, 1, 1)
-        filter_layout.addWidget(QtWidgets.QLabel("Дата заезда"), 0, 2)
-        filter_layout.addWidget(self.check_in_date, 1, 2)
-        filter_layout.addWidget(QtWidgets.QLabel("Дата выезда"), 0, 3)
-        filter_layout.addWidget(self.check_out_date, 1, 3)
-        filter_layout.addWidget(self.search_button, 1, 4)
-
-        layout.addLayout(filter_layout)
-
-        # Таблица для отображения номеров
-        self.tableView = QtWidgets.QTableView(tab)
-        self.tableView.verticalHeader().setVisible(False)
-        self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.tableView.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
-        self.tableView.horizontalHeader().setStretchLastSection(True)
-        self.tableView.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.tableView.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        layout.addWidget(self.tableView)
-
-        # Подключение кнопки "Найти"
-        self.search_button.clicked.connect(self.fetch_rooms_data)
+        self.search_button = QtWidgets.QPushButton("Поиск")
+        self.search_button.setFixedHeight(40)
         self.search_button.setStyleSheet("""
             QPushButton {
                 background-color: #0C5FFF;
                 color: white;
-                font: bold 11pt 'Arial';
-                padding: 8px 20px;
-                border: none;
+                font: bold 12pt 'Arial';
                 border-radius: 5px;
             }
             QPushButton:hover {
@@ -141,66 +110,187 @@ class Ui_MainWindow(object):
                 background-color: #063AB2;
             }
         """)
+        self.search_button.clicked.connect(self.fetch_rooms_data)
 
-    def setup_service_tab(self, tab):
-        """Настройка вкладки 'Обслуживание'."""
-        layout = QtWidgets.QVBoxLayout(tab)
+        filter_layout.addWidget(QtWidgets.QLabel("Статус номера:"), 0, 0)
+        filter_layout.addWidget(self.status_combo, 1, 0)
+        filter_layout.addWidget(QtWidgets.QLabel("Количество гостей:"), 0, 1)
+        filter_layout.addWidget(self.guests_combo, 1, 1)
+        filter_layout.addWidget(QtWidgets.QLabel("Дата заезда:"), 0, 2)
+        filter_layout.addWidget(self.check_in_date, 1, 2)
+        filter_layout.addWidget(QtWidgets.QLabel("Дата выезда:"), 0, 3)
+        filter_layout.addWidget(self.check_out_date, 1, 3)
+        filter_layout.addWidget(self.search_button, 1, 4, 1, 1)
 
-        # Таблица для отображения данных об обслуживании
-        self.tableView_2 = QtWidgets.QTableView(tab)
-        self.tableView_2.verticalHeader().setVisible(False)
-        self.tableView_2.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.tableView_2.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
-        self.tableView_2.horizontalHeader().setStretchLastSection(True)
-        self.tableView_2.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.tableView_2.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        layout.addWidget(self.tableView_2)
+        filter_panel.setLayout(filter_layout)
+        layout.addWidget(filter_panel)
+
+        self.rooms_table = QtWidgets.QTableView()
+        self.rooms_table.setStyleSheet("""
+            QTableView {
+                font: 11pt 'Arial';
+                gridline-color: #e0e0e0;
+                selection-background-color: #0C5FFF;
+                selection-color: white;
+            }
+            QHeaderView::section {
+                background-color: #0C5FFF;
+                color: white;
+                padding: 8px;
+                font: bold 11pt 'Arial';
+                border: none;
+            }
+        """)
+        self.rooms_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.rooms_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.rooms_table.verticalHeader().setDefaultSectionSize(40)
+        layout.addWidget(self.rooms_table)
+
+        self.tabWidget.addTab(self.rooms_tab, "Номера")
+
+    def setup_service_tab(self):
+        self.service_tab = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(self.service_tab)
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        self.service_table = QtWidgets.QTableView()
+        layout.addWidget(self.service_table)
+
+        self.tabWidget.addTab(self.service_tab, "Обслуживание")
+
+    def create_combo_box(self, items):
+        combo = QtWidgets.QComboBox()
+        combo.addItems(items)
+        combo.setStyleSheet("""
+            QComboBox {
+                font: 11pt 'Arial';
+                padding: 5px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+            QComboBox::drop-down {
+                width: 30px;
+                border-left: 1px solid #ddd;
+            }
+        """)
+        combo.setFixedHeight(35)
+        return combo
+
+    def create_date_edit(self):
+        date_edit = QtWidgets.QDateEdit(calendarPopup=True)
+        date_edit.setDate(QtCore.QDate.currentDate())
+        date_edit.setDisplayFormat("dd.MM.yyyy")
+        date_edit.setStyleSheet("""
+            QDateEdit {
+                font: 11pt 'Arial';
+                padding: 5px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+            QCalendarWidget QToolButton {
+                font: bold 10pt 'Arial';
+            }
+        """)
+        date_edit.setFixedHeight(35)
+        return date_edit
 
     def fetch_rooms_data(self):
-        """Получение данных о номерах с бэкенда."""
         try:
-            # Параметры фильтрации
+            check_in = self.check_in_date.date()
+            check_out = self.check_out_date.date()
+
+            if check_out <= check_in:
+                QtWidgets.QMessageBox.warning(
+                    self.main_window,
+                    "Ошибка дат",
+                    "Дата выезда должна быть позже даты заезда"
+                )
+                return
+
+            params = {
+                "check_in": check_in.toString("yyyy-MM-dd"),
+                "check_out": check_out.toString("yyyy-MM-dd")
+            }
+
             status = self.status_combo.currentText()
-            guests = self.guests_combo.currentText()
-            check_in = self.check_in_date.date().toString("yyyy-MM-dd")
-            check_out = self.check_out_date.date().toString("yyyy-MM-dd")
-
-            # Отправка GET-запроса к бэкенду
-            response = requests.get(
-                "http://localhost:5000/api/rooms",
-                params={
-                    "status": status,
-                    "guests": guests,
-                    "check_in": check_in,
-                    "check_out": check_out,
+            if status != "Все":
+                status_map = {
+                    "Свободен": "available",
+                    "Занят": "occupied",
+                    "На обслуживании": "maintenance"
                 }
-            )
-            response.raise_for_status()  # Проверка на ошибки HTTP
+                params["status"] = status_map.get(status)
 
-            # Обработка данных
+            guests = self.guests_combo.currentText()
+            if guests == "4+":
+                params["min_capacity"] = 4
+            else:
+                params["capacity"] = guests
+
+            response = requests.get("http://localhost:5000/ui/rooms", params=params, timeout=10)
+            response.raise_for_status()
             rooms_data = response.json()
 
-            # Создание модели для таблицы
+            if not isinstance(rooms_data, list):
+                raise ValueError("Ожидался список номеров")
+
             model = QtGui.QStandardItemModel()
-            model.setHorizontalHeaderLabels(["ID", "Номер", "Тип", "Доступность"])
+            model.setHorizontalHeaderLabels(["Номер", "Тип", "Вместимость", "Статус", "Цена за сутки"])
+
+            type_translations = {
+                "Basic": "Базовый",
+                "Advanced": "Комфорт",
+                "Business": "Бизнес",
+                "Dorm": "Общий"
+            }
 
             for room in rooms_data:
+                if not all(k in room for k in ['room_number', 'type', 'capacity', 'status', 'daily_rate']):
+                    continue
+
+                status_text = {
+                    'available': 'Свободен',
+                    'occupied': 'Занят',
+                    'maintenance': 'На обслуживании'
+                }.get(room['status'], 'Неизвестно')
+
+                translated_type = type_translations.get(room['type'], room['type'])
+
                 row = [
-                    QtGui.QStandardItem(str(room["id"])),
-                    QtGui.QStandardItem(room["number"]),
-                    QtGui.QStandardItem(room["type"]),
-                    QtGui.QStandardItem("Да" if room["available"] else "Нет"),
+                    QtGui.QStandardItem(str(room['room_number'])),
+                    QtGui.QStandardItem(translated_type),
+                    QtGui.QStandardItem(str(room['capacity'])),
+                    QtGui.QStandardItem(status_text),
+                    QtGui.QStandardItem(f"{room['daily_rate']:,.2f} ₽".replace(",", " "))
                 ]
                 model.appendRow(row)
 
-            self.tableView.setModel(model)
+            self.rooms_table.setModel(model)
+
+            if model.rowCount() == 0:
+                QtWidgets.QMessageBox.information(
+                    self.main_window,
+                    "Результаты поиска",
+                    "Номера по заданным критериям не найдены"
+                )
 
         except requests.exceptions.RequestException as e:
-            QtWidgets.QMessageBox.critical(self.centralwidget, "Ошибка", f"Не удалось получить данные: {e}")
+            QtWidgets.QMessageBox.critical(
+                self.main_window,
+                "Ошибка соединения",
+                f"Ошибка при запросе данных:\n{str(e)}"
+            )
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self.main_window,
+                "Ошибка",
+                f"Непредвиденная ошибка:\n{str(e)}"
+            )
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    app.setStyle("Fusion")
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)

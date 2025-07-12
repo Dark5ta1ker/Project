@@ -83,53 +83,83 @@ def handle_rooms():
         return add_room()
 
 def get_rooms():
-    """Получение списка комнат с возможностью фильтрации"""
     try:
-        # Получаем параметры запроса
         status = request.args.get('status')
-        guests = request.args.get('guests', type=int)
+        capacity = request.args.get('capacity')
+        min_capacity = request.args.get('min_capacity')
         check_in = request.args.get('check_in')
         check_out = request.args.get('check_out')
 
         query = Room.query
 
-        # Фильтрация по статусу
-        if status:
-            status = status.lower()
-            if status in ['available', 'свободен', 'free']:
-                query = query.filter(Room.status == 'available')
-            elif status in ['occupied', 'занят']:
-                query = query.filter(Room.status != 'available')
+        # Фильтр по вместимости
+        if capacity and capacity.isdigit():
+            query = query.filter(Room.capacity == int(capacity))
+        elif min_capacity and min_capacity.isdigit():
+            query = query.filter(Room.capacity >= int(min_capacity))
 
-        # Фильтрация по вместимости
-        if guests:
-            query = query.filter(Room.capacity >= guests)
-
-        # Фильтрация по датам бронирования
+        # Проверка дат
         if check_in and check_out:
             try:
-                check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
-                check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-                
-                # Ищем комнаты без бронирований в указанный период
-                query = query.filter(
-                    ~Room.room_id.in_(
-                        db.session.query(Booking.room_id).filter(
-                            Booking.check_in_date <= check_out_date,
-                            Booking.check_out_date >= check_in_date
-                        )
-                    )
-                )
+                check_in_date = datetime.strptime(check_in, "%Y-%m-%d").date()
+                check_out_date = datetime.strptime(check_out, "%Y-%m-%d").date()
+
+                # Подзапрос: номера, ЗАНЯТЫЕ в заданный период
+                booked_room_ids = db.session.query(Booking.room_id).filter(
+                    Booking.check_in_date <= check_out_date,
+                    Booking.check_out_date >= check_in_date,
+                    Booking.status != 'cancelled'
+                ).subquery()
+
+                if status == "available":
+                    query = query.filter(~Room.room_id.in_(booked_room_ids))
+                elif status == "occupied":
+                    query = query.filter(Room.room_id.in_(booked_room_ids))
+                elif status == "maintenance":
+                    query = query.filter(Room.status == 'maintenance')
+                # статус "все" или None — ничего не фильтруем
+
             except ValueError as e:
                 logger.warning(f"Invalid date format: {e}")
                 return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        else:
+            # если даты не заданы, фильтруем только по room.status
+            if status == "available":
+                query = query.filter(Room.status == 'available')
+            elif status == "occupied":
+                query = query.filter(Room.status != 'available')
+            elif status == "maintenance":
+                query = query.filter(Room.status == 'maintenance')
 
         rooms = query.all()
-        return jsonify([room.to_dict() for room in rooms])
+        results = []
+        for room in rooms:
+            room_dict = room.to_dict()
+
+            if check_in and check_out:
+                # Вычисляем динамический статус
+                overlapping_booking = Booking.query.filter(
+                    Booking.room_id == room.room_id,
+                    Booking.check_in_date <= check_out_date,
+                    Booking.check_out_date >= check_in_date,
+                    Booking.status != 'cancelled'
+                ).first()
+
+                if overlapping_booking:
+                    room_dict['dynamic_status'] = 'occupied'
+                else:
+                    room_dict['dynamic_status'] = 'available'
+            else:
+                room_dict['dynamic_status'] = room.status  # если нет дат — обычный статус
+
+            results.append(room_dict)
+
+        return jsonify(results)
 
     except Exception as e:
         logger.error(f"Error retrieving rooms: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
 
 def add_room():
     """Добавление новой комнаты"""
@@ -423,6 +453,17 @@ def add_payment():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error adding payment: {str(e)}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+# UI-маршрут для фронта (Qt) — список комнат
+@app.route('/ui/rooms', methods=['GET'])
+def ui_get_rooms():
+    """Контроллер для фронта: отдает отфильтрованный список комнат"""
+    try:
+        # Используем ту же логику, что и в get_rooms
+        return get_rooms()
+    except Exception as e:
+        logger.error(f"UI: Ошибка получения списка комнат: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
 # Регистрация обработчиков ошибок

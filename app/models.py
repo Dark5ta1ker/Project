@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.dialects.postgresql import ENUM
 
 # Создаем пользовательские типы ENUM для PostgreSQL
-room_type = ENUM('single', 'double', 'suite', 'dormitory', name='room_type', create_type=True)
+room_type = ENUM('Basic', 'Advanced', 'Buisiness', 'Dorm', name='room_type', create_type=True)
 room_status = ENUM('available', 'occupied', 'maintenance', 'cleaning', name='room_status', create_type=True)
 booking_status = ENUM('confirmed', 'checked_in', 'checked_out', 'cancelled', name='booking_status', create_type=True)
 payment_method = ENUM('cash', 'credit_card', 'debit_card', 'bank_transfer', name='payment_method', create_type=True)
