@@ -76,9 +76,8 @@ def add_guest():
 
 @app.route('/api/rooms/<room_number>/full-info', methods=['GET'])
 def get_full_room_info(room_number):
-    """Возвращает полную информацию о номере в формате для фронтенда"""
+    """Возвращает полную информацию о номере, включая бронирования, уборку, услуги и оплату"""
     try:
-        # 1. Получаем основную информацию о номере
         room = Room.query.filter_by(room_number=room_number).first()
         if not room:
             return jsonify({"error": "Room not found"}), 404
@@ -93,33 +92,56 @@ def get_full_room_info(room_number):
                 "description": room.description
             },
             "bookings": [],
-            "cleaning": []
+            "cleaning": [],
+            "payments": [],
+            "services": []
         }
         
-        # 2. Получаем информацию о бронированиях
         bookings = Booking.query.filter_by(room_id=room.room_id).all()
         for booking in bookings:
-            guest = Guest.query.get(booking.guest_id)
+            guest = db.session.get(Guest, booking.guest_id)
             result["bookings"].append({
                 "guest_name": f"{guest.first_name} {guest.last_name}",
                 "check_in": booking.check_in_date.strftime('%d.%m.%Y'),
                 "check_out": booking.check_out_date.strftime('%d.%m.%Y'),
                 "status": booking.status
             })
-        
-        # 3. Получаем информацию об уборке
+
+            # Услуги по бронированию
+            booking_services = BookingService.query.filter_by(booking_id=booking.booking_id).all()
+            for bs in booking_services:
+                service = db.session.get(Service, bs.service_id)
+                result["services"].append({
+                    "service_name": service.name,
+                    "quantity": bs.quantity,
+                    "date": bs.service_date.strftime('%d.%m.%Y'),
+                    "notes": bs.notes or ""
+                })
+
+            # Платежи по бронированию
+            payments = Payment.query.filter_by(booking_id=booking.booking_id).all()
+            for payment in payments:
+                result["payments"].append({
+                    "amount": float(payment.amount),
+                    "status": payment.status,
+                    "method": payment.method,
+                    "date": payment.transaction_date.strftime('%d.%m.%Y') if payment.transaction_date else "—"
+                })
+
+        # Уборка
         cleaning = CleaningSchedule.query.filter_by(room_id=room.room_id).first()
         if cleaning:
             result["cleaning"].append({
                 "date": cleaning.next_cleaning_date.strftime('%d.%m.%Y') if cleaning.next_cleaning_date else None,
                 "needs_cleaning": cleaning.needs_cleaning
             })
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         logger.error(f"Error getting full room info: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
 
 # Маршруты для работы с комнатами
 @app.route('/api/rooms', methods=['GET', 'POST'])
@@ -309,7 +331,7 @@ def update_cleaning_schedule():
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
-        schedule = CleaningSchedule.query.get(data['id'])
+        schedule = db.session.get(CleaningSchedule, data['id'])
         if not schedule:
             return jsonify({"error": "Cleaning schedule not found"}), 404
 
@@ -354,21 +376,17 @@ def add_booking():
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
-        # Проверка существования гостя
-        guest = Guest.query.get(data['guest_id'])
+        guest = db.session.get(Guest, data['guest_id'])
         if not guest:
             return jsonify({"error": "Guest not found"}), 404
 
-        # Проверка доступности комнаты
-        room = Room.query.get(data['room_id'])
+        room = db.session.get(Room, data['room_id'])
         if not room or room.status != 'available':
             return jsonify({"error": "Room not available"}), 400
 
-        # Проверка вместимости
         if data['adults'] + data.get('children', 0) > room.capacity:
             return jsonify({"error": "Room capacity exceeded"}), 400
 
-        # Проверка пересечения дат
         existing_booking = Booking.query.filter(
             Booking.room_id == data['room_id'],
             Booking.check_in_date <= datetime.strptime(data['check_out_date'], '%Y-%m-%d').date(),
@@ -390,10 +408,7 @@ def add_booking():
         )
 
         db.session.add(new_booking)
-        
-        # Обновляем статус комнаты
         room.status = 'occupied'
-        
         db.session.commit()
 
         return jsonify(new_booking.to_dict()), 201
@@ -478,8 +493,7 @@ def add_payment():
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
-        # Проверка существования бронирования
-        booking = Booking.query.get(data['booking_id'])
+        booking = db.session.get(Booking, data['booking_id'])
         if not booking:
             return jsonify({"error": "Booking not found"}), 404
 
