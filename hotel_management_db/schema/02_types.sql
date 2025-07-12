@@ -1,6 +1,6 @@
 -- Пользовательский тип 'room_type' (Тип номера)
 -- Определяет допустимые категории номеров.
-CREATE TYPE room_type AS ENUM ('Basic', 'Advanced', 'Buisiness', 'Dorm');
+CREATE TYPE room_type AS ENUM ('Basic', 'Advanced', 'Business', 'Dorm');
 
 -- Пользовательский тип 'room_status' (Статус номера)
 -- Определяет текущее состояние номера.

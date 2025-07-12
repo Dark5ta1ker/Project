@@ -74,6 +74,53 @@ def add_guest():
         logger.error(f"Error adding guest: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
+@app.route('/api/rooms/<room_number>/full-info', methods=['GET'])
+def get_full_room_info(room_number):
+    """Возвращает полную информацию о номере в формате для фронтенда"""
+    try:
+        # 1. Получаем основную информацию о номере
+        room = Room.query.filter_by(room_number=room_number).first()
+        if not room:
+            return jsonify({"error": "Room not found"}), 404
+        
+        result = {
+            "room_info": {
+                "room_number": room.room_number,
+                "type": room.type,
+                "capacity": room.capacity,
+                "status": room.status,
+                "daily_rate": float(room.daily_rate),
+                "description": room.description
+            },
+            "bookings": [],
+            "cleaning": []
+        }
+        
+        # 2. Получаем информацию о бронированиях
+        bookings = Booking.query.filter_by(room_id=room.room_id).all()
+        for booking in bookings:
+            guest = Guest.query.get(booking.guest_id)
+            result["bookings"].append({
+                "guest_name": f"{guest.first_name} {guest.last_name}",
+                "check_in": booking.check_in_date.strftime('%d.%m.%Y'),
+                "check_out": booking.check_out_date.strftime('%d.%m.%Y'),
+                "status": booking.status
+            })
+        
+        # 3. Получаем информацию об уборке
+        cleaning = CleaningSchedule.query.filter_by(room_id=room.room_id).first()
+        if cleaning:
+            result["cleaning"].append({
+                "date": cleaning.next_cleaning_date.strftime('%d.%m.%Y') if cleaning.next_cleaning_date else None,
+                "needs_cleaning": cleaning.needs_cleaning
+            })
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error getting full room info: {str(e)}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
 # Маршруты для работы с комнатами
 @app.route('/api/rooms', methods=['GET', 'POST'])
 def handle_rooms():
@@ -159,7 +206,6 @@ def get_rooms():
     except Exception as e:
         logger.error(f"Error retrieving rooms: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
-
 
 def add_room():
     """Добавление новой комнаты"""
