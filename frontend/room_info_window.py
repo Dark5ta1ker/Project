@@ -157,12 +157,12 @@ class RoomInfoWindow(QtWidgets.QDialog):
 
     def fill_service_table(self, cleaning_records, extra_services):
         model = QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Дата", "Тип", "Описание", "Дополнительно"])
+        model.setHorizontalHeaderLabels(["Дата", "Название", "Описание", "Дополнительно"])
 
         # Уборка
         for record in cleaning_records:
             row = [
-                QtGui.QStandardItem(record.get('date', 'N/A')),
+                QtGui.QStandardItem(record.get('date', '—')),
                 QtGui.QStandardItem("Уборка"),
                 QtGui.QStandardItem("Ежедневная уборка"),
                 QtGui.QStandardItem("Требуется" if record.get('needs_cleaning') else "Не требуется")
@@ -172,15 +172,17 @@ class RoomInfoWindow(QtWidgets.QDialog):
         # Дополнительные услуги
         for service in extra_services:
             row = [
-                QtGui.QStandardItem(service.get('service_date', 'N/A')),
-                QtGui.QStandardItem("Услуга"),
-                QtGui.QStandardItem(f"{service.get('name', '')} ×{service.get('quantity', 1)}"),
+                QtGui.QStandardItem(service.get('date', '—')),
+                QtGui.QStandardItem(service.get('service_name', '—')),
+                QtGui.QStandardItem(f"×{service.get('quantity', 1)}"),
                 QtGui.QStandardItem(service.get('notes', ''))
             ]
             model.appendRow(row)
 
         self.service_table.setModel(model)
         self.service_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+
+
 
     def fill_payments_table(self, payments):
         model = QtGui.QStandardItemModel()

@@ -142,7 +142,6 @@ def get_full_room_info(room_number):
         logger.error(f"Error getting full room info: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
-
 # Маршруты для работы с комнатами
 @app.route('/api/rooms', methods=['GET', 'POST'])
 def handle_rooms():
