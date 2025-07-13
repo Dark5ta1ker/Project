@@ -2,37 +2,20 @@
 
     docker ps
 
-Используйте docker exec для подключения к контейнеру: 
+Используйте docker exec для импорта файлов ДБ: 
 
-    docker exec -it project-db-1 psql -U hotel_user -d hotel_db
+    docker cp "<Путь к файлу>\hotel_management_db" project-db-1:/sql_files
 
-Внутри psql выполните следующие команды: 
+Активируйте развертывание БД:
 
-    CREATE TABLE rooms (
-        id SERIAL PRIMARY KEY,
-        number VARCHAR(10) NOT NULL,
-        type VARCHAR(50) NOT NULL,
-        available BOOLEAN DEFAULT TRUE
-    );
+    docker exec -it project-db-1 bash -c "cd /sql_files && psql -U hotel_user -d hotel_db -f deploy/full_deploy.sql"
 
-Добавьте несколько записей в таблицу:
+Проверьте наличие таблиц:
 
-    INSERT INTO rooms (number, type, available) VALUES
-    ('101', 'Single', TRUE),
-    ('102', 'Double', FALSE),
-    ('103', 'Suite', TRUE);
-
-Убедитесь, что данные добавлены:
-
-    SELECT * FROM rooms;
+    docker exec project-db-1 psql -U hotel_user -d hotel_db -c "\dt *.*"
 
 Запустите все сервисы:
 
     docker-compose up --build
 
-Перейдите в папку frontend и запустите PyQt6-приложение:
-
-    cd frontend
-    pip install -r requirements.txt
-    python main.py
 
