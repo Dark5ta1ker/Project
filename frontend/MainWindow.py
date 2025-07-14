@@ -44,7 +44,6 @@ class TableItemDelegate(QtWidgets.QStyledItemDelegate):
         """
         return None
 
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         """
@@ -438,35 +437,91 @@ class Ui_MainWindow(object):
         booking_dialog = GuestBookingDialog(room_number=room_number, room_capacity=capacity)
         if booking_dialog.exec_() == QtWidgets.QDialog.Accepted:
             try:
-                guests_data = booking_dialog.get_guest_data()
+                # Получаем данные из формы
+                guest_data = booking_dialog.form.get_data()
+                
+                # Получаем room_id через прямой запрос к API
+                response = requests.get(
+                    f"http://localhost:5000/api/rooms?room_number={room_number}",
+                    timeout=5
+                )
+                response.raise_for_status()
+                rooms = response.json()
+                
+                if not rooms or not isinstance(rooms, list) or len(rooms) == 0:
+                    raise Exception("Не удалось получить информацию о номере")
+                
+                room_id = rooms[0].get("room_id")
+                if not room_id:
+                    raise Exception("Номер не найден в базе данных")
+
+                # Формируем данные для отправки
                 booking_data = {
-                    "room_number": room_number,
-                    "check_in": guests_data[0]["check_in"],
-                    "check_out": guests_data[0]["check_out"],
-                    "adults": len(guests_data),
-                    "children": 0,
-                    "payment_method": booking_dialog.get_payment_method(),
-                    "guests": guests_data,
-                    "services": booking_dialog.get_selected_services()
+                    "room_id": room_id,
+                    "check_in_date": guest_data["check_in"],
+                    "check_out_date": guest_data["check_out"],
+                    "adults": booking_dialog.adults_spin.value(),
+                    "children": booking_dialog.children_spin.value(),
+                    "guest": {
+                        "passport_number": guest_data["passport_number"],
+                        "first_name": guest_data["first_name"],
+                        "last_name": guest_data["last_name"],
+                        "phone": guest_data["phone"],
+                        "email": guest_data.get("email"),
+                        "address": None
+                    },
+                    "payment_method": booking_dialog.payment_map.get(
+                        booking_dialog.payment_combo.currentText(),
+                        "cash"  # значение по умолчанию
+                    ),
+                    "services": [
+                        {
+                            "service_id": int(service["service_id"]),
+                            "quantity": int(service["quantity"])
+                        }
+                        for service in booking_dialog.get_selected_services()
+                        if service["quantity"] > 0
+                    ]
                 }
 
-                response = requests.post("http://localhost:5000/api/bookings", json=booking_data, timeout=10)
-                response.raise_for_status()
+                # Логирование для отладки
+                print("Отправляемые данные на сервер:")
+                import pprint
+                pprint.pprint(booking_data)
+
+                # Отправка запроса
+                response = requests.post(
+                    "http://localhost:5000/api/bookings",
+                    json=booking_data,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                # Проверка ответа
+                if response.status_code != 201:
+                    error_msg = response.json().get("error", "Неизвестная ошибка сервера")
+                    raise Exception(f"Ошибка сервера: {error_msg}")
 
                 QtWidgets.QMessageBox.information(
                     self.main_window,
                     "Успех",
                     f"Номер {room_number} успешно забронирован!"
                 )
+                self.fetch_rooms_data()  # Обновляем список номеров
 
-                self.fetch_rooms_data()
+            except requests.exceptions.RequestException as e:
+                QtWidgets.QMessageBox.critical(
+                    self.main_window,
+                    "Ошибка сети",
+                    f"Ошибка соединения с сервером:\n{str(e)}"
+                )
             except Exception as e:
                 QtWidgets.QMessageBox.critical(
                     self.main_window,
-                    "Ошибка",
-                    f"Ошибка при бронировании:\n{str(e)}"
+                    "Ошибка бронирования",
+                    f"Произошла ошибка:\n{str(e)}\n\nПроверьте данные и повторите попытку."
                 )
-
+                print("Подробности ошибки:", traceback.format_exc())
 
 if __name__ == "__main__":
     import sys

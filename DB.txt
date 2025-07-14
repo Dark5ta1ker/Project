@@ -4,11 +4,11 @@
 
 Используйте docker exec для импорта файлов ДБ: 
 
-    docker cp "<Путь к файлу>\hotel_management_db" project-db-1:/sql_files
+    docker cp "<Путь к файлу>\hotel_management_db" project-1-db-1:/sql_files
 
 Активируйте развертывание БД:
 
-    docker exec -it project-db-1 bash -c "cd /sql_files && psql -U hotel_user -d hotel_db -f deploy/full_deploy.sql"
+    docker exec -it project-1-db-1 bash -c "cd /sql_files && psql -U hotel_user -d hotel_db -f deploy/full_deploy.sql"
 
 Проверьте наличие таблиц:
 

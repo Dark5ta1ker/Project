@@ -4,6 +4,7 @@ import requests
 class GuestForm(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        self.booking_dialog = None  # Ссылка на родительский диалог
         layout = QtWidgets.QFormLayout()
         layout.setLabelAlignment(QtCore.Qt.AlignLeft)
         layout.setFormAlignment(QtCore.Qt.AlignTop)
@@ -54,13 +55,18 @@ class GuestForm(QtWidgets.QWidget):
         ])
 
     def get_data(self):
+        if not self.booking_dialog:
+            raise RuntimeError("BookingDialog reference not set")
+
         return {
             "passport_number": self.passport.text().strip(),
             "first_name": self.name.text().strip(),
             "last_name": self.surname.text().strip(),
             "email": self.email.text().strip() or None,
             "phone": self.phone.text().strip(),
-            "address": None
+            "address": None,
+            "check_in": self.booking_dialog.checkin.date().toString("yyyy-MM-dd"),
+            "check_out": self.booking_dialog.checkout.date().toString("yyyy-MM-dd")
         }
 
 class GuestBookingDialog(QtWidgets.QDialog):
@@ -120,8 +126,10 @@ class GuestBookingDialog(QtWidgets.QDialog):
         guest_count_layout.addWidget(self.children_spin)
         layout.addLayout(guest_count_layout)
 
-        # Форма одного гостя
+        # Форма гостя
         self.form = GuestForm()
+        self.form.booking_dialog = self  # Явная передача ссылки
+        
         form_box = QtWidgets.QGroupBox("Данные гостя")
         form_layout = QtWidgets.QVBoxLayout(form_box)
         form_layout.addWidget(self.form)
@@ -188,7 +196,7 @@ class GuestBookingDialog(QtWidgets.QDialog):
             QPushButton:hover { background-color: #45a049; }
             QPushButton:pressed { background-color: #3e8e41; }
         """)
-        self.confirm_btn.clicked.connect(self.confirm)
+        self.confirm_btn.clicked.connect(self.confirm_booking)
         layout.addWidget(self.confirm_btn, alignment=QtCore.Qt.AlignCenter)
 
     def create_label(self, text, style):
@@ -228,29 +236,34 @@ class GuestBookingDialog(QtWidgets.QDialog):
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Ошибка", str(e))
 
-    def confirm(self):
+    def confirm_booking(self):
         if not self.form.is_valid():
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Заполните обязательные поля гостя.")
             return
         if self.checkout.date() <= self.checkin.date():
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Дата выезда должна быть позже даты заезда.")
             return
-        QtWidgets.QMessageBox.information(self, "Успех", "Бронирование подтверждено!")
-        self.accept()
 
-    def get_guest_data(self):
-        return [self.form.get_data()]
-
-    def get_booking_dates(self):
-        return {
-            "check_in": self.checkin.date().toString("yyyy-MM-dd"),
-            "check_out": self.checkout.date().toString("yyyy-MM-dd"),
-            "adults": self.adults_spin.value(),
-            "children": self.children_spin.value()
+        booking_data = {
+            "room_number": self.room_number,
+            "guest": self.form.get_data(),  # Используем form.get_data() вместо get_guest_data()
+            "dates": {
+                "check_in": self.checkin.date().toString("yyyy-MM-dd"),
+                "check_out": self.checkout.date().toString("yyyy-MM-dd")
+            },
+            "guests": {
+                "adults": self.adults_spin.value(),
+                "children": self.children_spin.value()
+            },
+            "payment": self.payment_map[self.payment_combo.currentText()],
+            "services": self.get_selected_services()
         }
 
-    def get_payment_method(self):
-        return self.payment_map[self.payment_combo.currentText()]
+        # Здесь можно добавить отправку данных на сервер
+        print("Бронирование:", booking_data)  # Для отладки
+        
+        QtWidgets.QMessageBox.information(self, "Успех", "Бронирование подтверждено!")
+        self.accept()
 
     def get_selected_services(self):
         return [{"service_id": sid, "quantity": spin.value()}
