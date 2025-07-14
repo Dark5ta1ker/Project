@@ -406,52 +406,75 @@ def get_bookings():
         return jsonify({"error": "Internal server error"}), 500
 
 def add_booking():
-    """
-    Добавление нового бронирования в базу данных.
-    Проверяет входные данные на наличие обязательных полей и безопасность.
-    Валидирует даты и вместимость номера.
-    Возвращает созданный объект бронирования в формате JSON с кодом 201.
-    """
+    """Добавление нового бронирования"""
     try:
         data = request.json
+
         if not InputValidator.is_safe_input(data):
             return jsonify({"error": "Invalid input data"}), 400
-        required_fields = {'room_id', 'check_in_date', 'check_out_date', 'adults'}
+
+        # 1. Проверка обязательных полей
+        required_fields = {'room_id', 'check_in_date', 'check_out_date', 'adults', 'guest'}
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
-        adults = data['adults']
-        children = data.get('children', 0)
-        if not isinstance(adults, int) or adults < 1:
-            return jsonify({"error": "Adults must be an integer >= 1"}), 400
-        if not isinstance(children, int) or children < 0:
-            return jsonify({"error": "Children must be an integer >= 0"}), 400
+
+        # 2. Получение и валидация гостя
+        guest_data = data['guest']
+        if 'passport_number' not in guest_data:
+            return jsonify({"error": "Passport number required"}), 400
+
+        passport_number = guest_data['passport_number'].upper()
+
+        guest = Guest.query.filter_by(passport_number=passport_number).first()
+        if not guest:
+            guest = Guest(
+                passport_number=passport_number,
+                first_name=guest_data['first_name'],
+                last_name=guest_data['last_name'],
+                phone=guest_data['phone'],
+                email=guest_data.get('email'),
+                address=guest_data.get('address')
+            )
+            db.session.add(guest)
+            db.session.flush()  # чтобы получить guest.guest_id до commit
+
+        # 3. Проверка номера
         room = db.session.get(Room, data['room_id'])
         if not room or room.status != 'available':
             return jsonify({"error": "Room not available"}), 400
-        if adults + children > room.capacity:
+
+        # 4. Проверка вместимости
+        if data['adults'] + data.get('children', 0) > room.capacity:
             return jsonify({"error": "Room capacity exceeded"}), 400
-        check_in_date = datetime.strptime(data['check_in_date'], '%Y-%m-%d').date()
-        check_out_date = datetime.strptime(data['check_out_date'], '%Y-%m-%d').date()
+
+        # 5. Проверка пересечений
         existing_booking = Booking.query.filter(
             Booking.room_id == data['room_id'],
-            Booking.check_in_date <= check_out_date,
-            Booking.check_out_date >= check_in_date,
+            Booking.check_in_date <= datetime.strptime(data['check_out_date'], '%Y-%m-%d').date(),
+            Booking.check_out_date >= datetime.strptime(data['check_in_date'], '%Y-%m-%d').date(),
             Booking.status != 'cancelled'
         ).first()
+
         if existing_booking:
             return jsonify({"error": "Room already booked for these dates"}), 400
+
+        # 6. Создание брони
         new_booking = Booking(
+            guest_id=guest.guest_id,
             room_id=data['room_id'],
-            check_in_date=check_in_date,
-            check_out_date=check_out_date,
-            adults=adults,
-            children=children,
+            check_in_date=datetime.strptime(data['check_in_date'], '%Y-%m-%d').date(),
+            check_out_date=datetime.strptime(data['check_out_date'], '%Y-%m-%d').date(),
+            adults=data['adults'],
+            children=data.get('children', 0),
             status='confirmed'
         )
+
         db.session.add(new_booking)
         room.status = 'occupied'
         db.session.commit()
+
         return jsonify(new_booking.to_dict()), 201
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error adding booking: {str(e)}", exc_info=True)
