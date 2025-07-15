@@ -1,49 +1,53 @@
 import re
+from datetime import datetime
 
 class InputValidator:
     """
-    Класс для проверки входных данных на наличие опасных паттернов.
+    Класс для санитизации (очистки) входных данных от потенциально опасных паттернов.
+    Не заменяет валидацию на уровне БД или бизнес-логики.
     """
-    # Регулярные выражения для обнаружения подозрительных паттернов
     XSS_PATTERNS = [
-        r"<script.*?>.*?</script>",  # Проверка на теги <script>
-        r"javascript:",              # Проверка на JavaScript в атрибутах
-        r"on\w+\s*=",                # Проверка на события (onclick, onload и т.д.)
+        r"<script.*?>.*?</script>",
+        r"javascript:",
+        r"on\w+\s*=",
     ]
 
     SQL_INJECTION_PATTERNS = [
-        r"['\"].*\b(OR|AND)\b.*['\"]",  # Проверка на логические операторы в SQL-инъекциях
-        r";--",                         # Проверка на комментарии SQL
-        r"UNION\s+SELECT",              # Проверка на UNION-инъекции
-        r"DROP\s+TABLE",                # Проверка на DROP TABLE
-        r"DELETE\s+FROM",               # Проверка на DELETE FROM
+        r"['\"].*\b(OR|AND)\b.*['\"]",
+        r";--",
+        r"UNION\s+SELECT",
+        r"DROP\s+TABLE",
+        r"DELETE\s+FROM",
     ]
 
-    @staticmethod
-    def is_safe_input(data):
+    @classmethod
+    def sanitize_input(cls, data):
         """
-        Проверяет, является ли входное значение безопасным.
-        :param data: Входные данные (строка или словарь).
-        :return: True, если данные безопасны, иначе False.
+        Рекурсивно очищает входные данные от потенциально опасных паттернов.
+        Возвращает очищенные данные без изменения структуры.
         """
         if isinstance(data, dict):
-            # Если данные - словарь, проверяем каждое значение
-            for value in data.values():
-                if not InputValidator.is_safe_input(value):
-                    return False
-            return True
+            return {k: cls.sanitize_input(v) for k, v in data.items()}
         elif isinstance(data, list):
-            # Если данные - список, проверяем каждый элемент
-            for item in data:
-                if not InputValidator.is_safe_input(item):
-                    return False
-            return True
+            return [cls.sanitize_input(item) for item in data]
         elif isinstance(data, str):
-            # Если данные - строка, проверяем на наличие опасных паттернов
-            for pattern in InputValidator.XSS_PATTERNS + InputValidator.SQL_INJECTION_PATTERNS:
-                if re.search(pattern, data, re.IGNORECASE):
-                    return False
+            for pattern in cls.XSS_PATTERNS + cls.SQL_INJECTION_PATTERNS:
+                data = re.sub(pattern, '', data, flags=re.IGNORECASE)
+            return data
+        return data
+
+    @classmethod
+    def validate_dates(cls, date_str, format="%Y-%m-%d"):
+        """
+        Валидация дат без санитизации (отдельный метод)
+        """
+        try:
+            datetime.strptime(date_str, format)
             return True
-        else:
-            # Для всех остальных типов данных считаем их безопасными
-            return True
+        except (ValueError, TypeError):
+            return False
+
+    @classmethod
+    def validate_phone(cls, phone_str):
+        """Валидация номера телефона (пример)"""
+        return bool(re.match(r'^\+?[\d\s\-\(\)]{7,15}$', str(phone_str)))
