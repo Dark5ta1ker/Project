@@ -5,7 +5,12 @@ from datetime import datetime
 from app.logger_config import setup_logger
 from app.error_handlers import register_error_handlers
 from app.input_validator import InputValidator
-from app.models import db, Guest, Room, CleaningSchedule, Booking, Service, BookingService, Payment
+from app.models import (
+    Guest, Room, Booking, 
+    Service, BookingService, 
+    Payment, CleaningSchedule
+)
+from app.models import db
 
 # Загрузка переменных окружения из файла .env
 load_dotenv()
