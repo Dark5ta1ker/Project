@@ -10,7 +10,7 @@ CREATE TABLE guests (
     address 			TEXT, 												-- Адрес проживания гостя (необязательно).
     created_at 			TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Дата и время создания записи о госте. Устанавливается автоматически при вставке.
     updated_at 			TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Дата и время последнего обновления записи о госте. Обновляется триггером.
-    CONSTRAINT valid_passport CHECK (passport_number ~ '^[A-Z0-9]{6,20}$'), -- Ограничение: номер паспорта должен состоять из букв и цифр, длиной от 6 до 20 символов.
+    CONSTRAINT valid_passport CHECK (passport_number ~ '^[0-9]{6,20}$'), -- Ограничение: номер паспорта должен состоять из букв и цифр, длиной от 6 до 20 символов.
     CONSTRAINT valid_email CHECK (email IS NULL OR email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$') -- Ограничение: email должен быть NULL или соответствовать формату email.
 );
 

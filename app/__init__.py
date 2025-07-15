@@ -13,7 +13,7 @@ def create_app():
     db.init_app(app)
     
     # Регистрируем обработчики ошибок
-    from .error_handlers import register_error_handlers
+    from .utils.error_handlers import register_error_handlers
     register_error_handlers(app)
     
     # Импортируем и регистрируем blueprints
