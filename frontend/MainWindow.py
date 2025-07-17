@@ -484,11 +484,6 @@ class Ui_MainWindow(object):
                     ]
                 }
 
-                # Логирование для отладки
-                print("Отправляемые данные на сервер:")
-                import pprint
-                pprint.pprint(booking_data)
-
                 # Отправка запроса
                 response = requests.post(
                     "http://localhost:5000/api/bookings",
