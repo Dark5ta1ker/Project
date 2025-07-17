@@ -7,7 +7,6 @@ def create_app(config_name='default'):
     # Загрузка конфигурации
     cfg = config[config_name]
     app.config.from_object(cfg)
-    cfg.init_app(app)  # Инициализируем логи
     
     # Инициализация БД
     from .models import db
