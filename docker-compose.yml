@@ -2,21 +2,23 @@ version: '3.8'
 
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "5000:5000"
-    volumes:
-      - .:/app  # вместо - ./app:/app
     environment:
-      - PYTHONPATH=/app
       - DB_HOST=db
-      - DB_NAME=hotel_db
       - DB_USER=hotel_user
       - DB_PASSWORD=hotel_password
+      - DB_NAME=hotel_db
+      - DB_PORT=5432
+      - FLASK_DEBUG=1
     depends_on:
       - db
+    volumes:
+      - .:/app
+    # Важно для логирования:
+    tty: true
+    stdin_open: true
 
   db:
     image: postgres:13
@@ -25,7 +27,7 @@ services:
       POSTGRES_PASSWORD: hotel_password
       POSTGRES_DB: hotel_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Используем именованный том
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:  # Определение именованного тома
+  postgres_data:

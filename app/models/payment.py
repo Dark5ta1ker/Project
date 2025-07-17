@@ -1,6 +1,6 @@
 from . import db
 from datetime import datetime
-from app.models.base import payment_method, payment_status
+from .base import payment_method, payment_status
 
 class Payment(db.Model):
     """

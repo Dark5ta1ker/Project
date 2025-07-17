@@ -1,5 +1,5 @@
 from . import db
-from app.models.base import room_status, room_type
+from .base import room_status, room_type
 
 class Room(db.Model):
     """

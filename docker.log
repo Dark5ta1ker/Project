@@ -1,0 +1,56 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 374B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 420B done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/python:3.9-slim
+#3 DONE 1.6s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 229.92kB 0.1s done
+#5 DONE 0.3s
+
+#6 [1/5] FROM docker.io/library/python:3.9-slim@sha256:c2a0feb07dedbf91498883c2f8e1e5201e95c91d413e21c3bea780c8aad8e6a7
+#6 resolve docker.io/library/python:3.9-slim@sha256:c2a0feb07dedbf91498883c2f8e1e5201e95c91d413e21c3bea780c8aad8e6a7
+#6 resolve docker.io/library/python:3.9-slim@sha256:c2a0feb07dedbf91498883c2f8e1e5201e95c91d413e21c3bea780c8aad8e6a7 0.3s done
+#6 DONE 0.4s
+
+#7 [2/5] COPY app/requirements.txt .
+#7 CACHED
+
+#8 [3/5] RUN pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [4/5] COPY . .
+#9 DONE 2.0s
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers 2.7s done
+#10 exporting manifest sha256:bb9904c2ef1c98e94d3ab8dd1d3534319fdcaab0c0721f839b34c70fcd89466b
+#10 exporting manifest sha256:bb9904c2ef1c98e94d3ab8dd1d3534319fdcaab0c0721f839b34c70fcd89466b 0.2s done
+#10 exporting config sha256:ab8d0b2b4f7767e0a0b80a643350b25b02a476ded4a8e55614fdbdec3e05a0fd
+#10 exporting config sha256:ab8d0b2b4f7767e0a0b80a643350b25b02a476ded4a8e55614fdbdec3e05a0fd 0.3s done
+#10 exporting attestation manifest sha256:a1a4198e53f837769ff991d49774c71a3f470c6e2ce86ab0ff89682c58ca595e
+#10 exporting attestation manifest sha256:a1a4198e53f837769ff991d49774c71a3f470c6e2ce86ab0ff89682c58ca595e 0.4s done
+#10 exporting manifest list sha256:b84845ec8e489be12302acfede43767ad9ad79b10c10202137b0b68d1607a846
+#10 exporting manifest list sha256:b84845ec8e489be12302acfede43767ad9ad79b10c10202137b0b68d1607a846 0.3s done
+#10 naming to docker.io/library/project-web:latest
+#10 naming to docker.io/library/project-web:latest 0.0s done
+#10 unpacking to docker.io/library/project-web:latest
+#10 unpacking to docker.io/library/project-web:latest 0.7s done
+#10 DONE 5.0s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.0s
+Attaching to db-1, web-1
+db-1   | 
+db-1   | PostgreSQL Database directory appears to contain a database; Skipping initialization
+db-1   | 

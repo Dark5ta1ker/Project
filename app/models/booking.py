@@ -1,5 +1,5 @@
 from . import db
-from app.models.base import booking_status
+from .base import booking_status
 from datetime import datetime
 
 class Booking(db.Model):
