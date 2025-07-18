@@ -11,6 +11,7 @@ COPY . .
 
 # Важно: Убедитесь что логи пишутся в stdout/stderr
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
+ENV PYTHONPATH=/app
+ENV FLASK_ENV=development
 
 CMD ["python", "-m", "app.run"]
