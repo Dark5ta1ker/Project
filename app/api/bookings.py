@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.booking_service import BookingService
+from app.services import BookingService
 
 bookings_bp = Blueprint("bookings", __name__)
 booking_service = BookingService()
