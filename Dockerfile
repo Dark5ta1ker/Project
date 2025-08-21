@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Изменяем команду запуска
-CMD ["python", "app/main.py"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

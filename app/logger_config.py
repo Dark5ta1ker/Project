@@ -1,31 +1,40 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-def setup_logger():
+def setup_logging(app=None):
     """
     Настройка логгера для приложения.
     """
     # Создание логгера
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)  # Устанавливаем глобальный уровень логов
+    logger.setLevel(logging.DEBUG)  # Глобальный уровень логов
+
+    # Если хендлеры уже есть — не добавляем повторно
+    if logger.handlers:
+        return logger
 
     # Форматтер для логов
     formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(message)s"
+        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
     )
 
-    # Логирование в консоль
+    # Консоль
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)  # Выводим INFO и выше в консоль
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # Логирование в файл
+    # Файл
     file_handler = RotatingFileHandler(
         "app.log", maxBytes=1024 * 1024, backupCount=5
-    )  # Лог-файл размером до 1 МБ, хранятся 5 старых файлов
-    file_handler.setLevel(logging.DEBUG)  # Сохраняем DEBUG и выше в файл
+    )
+    file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+
+    # Если передали Flask app — привязываем уровень логирования
+    if app:
+        log_level = app.config.get("LOG_LEVEL", "INFO")
+        app.logger.setLevel(log_level)
 
     return logger
