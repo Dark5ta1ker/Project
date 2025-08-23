@@ -2,9 +2,12 @@ from flask import Flask
 from .config import Config
 from .extensions import db, ma, migrate, init_extensions
 from .api import guests_bp, rooms_bp, bookings_bp, services_bp
-
+from dotenv import load_dotenv
 
 def create_app(config_class=Config):
+    
+    load_dotenv()
+    
     app = Flask(__name__)
     app.config.from_object(config_class)
 

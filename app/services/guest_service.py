@@ -3,7 +3,7 @@ from app.extensions import db
 
 class GuestService:
     @staticmethod
-    def get_all():
+    def get_all_guests():
         return Guest.query.all()
 
     @staticmethod

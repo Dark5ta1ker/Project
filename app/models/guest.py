@@ -1,7 +1,7 @@
 from . import db
 
 class Guest(db.Model):
-    __tablename__ = "guests"
+    __tablename__ = "guest"
 
     id = db.Column(db.Integer, primary_key=True)
     passport_number = db.Column(db.String(20), unique=True, nullable=False)

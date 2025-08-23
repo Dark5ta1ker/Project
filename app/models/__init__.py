@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from app.extensions import db
 
 # Импорт моделей (чтобы SQLAlchemy их видел)
 from .guest import Guest
