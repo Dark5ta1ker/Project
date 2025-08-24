@@ -3,30 +3,30 @@ from app.extensions import db
 
 class BookingService:
     @staticmethod
-    def get_all():
+    def get_all_bookings():
         return Booking.query.all()
 
     @staticmethod
-    def get_by_id(booking_id: int):
-        return Booking.query.get_or_404(booking_id)
+    def get_booking_by_id(bk_s_id: int):
+        return Booking.query.get_or_404(bk_s_id)
 
     @staticmethod
-    def create(data: dict):
-        booking = Booking(**data)
-        db.session.add(booking)
+    def create_booking(data: dict):
+        bs = Booking(**data)
+        db.session.add(bs)
         db.session.commit()
-        return booking
+        return bs
 
     @staticmethod
-    def update(booking_id: int, data: dict):
-        booking = Booking.query.get_or_404(booking_id)
-        for key, value in data.items():
-            setattr(booking, key, value)
+    def update_booking(bk_s_id: int, data: dict):
+        bs = Booking.query.get_or_404(bk_s_id)
+        for k, v in data.items():
+            setattr(bs, k, v)
         db.session.commit()
-        return booking
+        return bs
 
     @staticmethod
-    def delete(booking_id: int):
-        booking = Booking.query.get_or_404(booking_id)
-        db.session.delete(booking)
+    def delete_booking(bk_s_id: int):
+        bs = Booking.query.get_or_404(bk_s_id)
+        db.session.delete(bs)
         db.session.commit()

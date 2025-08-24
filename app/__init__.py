@@ -1,7 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, ma, migrate, init_extensions
-from .api import guests_bp, rooms_bp, bookings_bp, services_bp
+from .api import guests_bp, rooms_bp, bookings_bp, services_bp, payments_bp, booking_services_bp
 from dotenv import load_dotenv
 
 def create_app(config_class=Config):
@@ -19,5 +19,7 @@ def create_app(config_class=Config):
     app.register_blueprint(rooms_bp, url_prefix="/api/rooms")
     app.register_blueprint(bookings_bp, url_prefix="/api/bookings")
     app.register_blueprint(services_bp, url_prefix="/api/services")
+    app.register_blueprint(payments_bp, url_prefix="/api/payments")
+    app.register_blueprint(booking_services_bp, url_prefix="/api/booking_services")
 
     return app
