@@ -1,7 +1,7 @@
 from app.models.booking_service import BookingService
 from app.extensions import db
 
-class BookingServicesService:
+class BookingServices:
     @staticmethod
     def get_all_booking_service():
         return BookingService.query.all()

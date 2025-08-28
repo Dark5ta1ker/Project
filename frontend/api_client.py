@@ -46,7 +46,7 @@ class ApiClient:
     # ===== УСЛУГИ =====
     def get_services(self, start_date, end_date):
         """Получение списка услуг за период"""
-        url = f"{self.base_url}/ui/services-by-date"
+        url = f"{self.base_url}/api/services/services-by-date"
         response = requests.get(
             url,
             params={"start_date": start_date, "end_date": end_date},

@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from app.services import BookingServicesService
+from app.services import BookingServices
 
 booking_services_bp = Blueprint("booking_services", __name__)
-booking_services = BookingServicesService()
+booking_services = BookingServices()
 
 @booking_services_bp.route("/", methods=["GET"])
 def get_all_booking_service():
@@ -11,7 +11,7 @@ def get_all_booking_service():
 
 @booking_services_bp.route("/<int:bs_id>", methods=["GET"])
 def get_booking_service(bs_id):
-    service = booking_services.get__booking_service(bs_id)
+    service = booking_services.get_booking_service(bs_id)
     return jsonify(service.to_dict())
 
 @booking_services_bp.route("/", methods=["POST"])

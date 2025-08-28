@@ -36,3 +36,10 @@ def delete_service(service_id):
     if not success:
         return jsonify({"error": "Service not found"}), 404
     return jsonify({"message": "Service deleted"})
+
+@services_bp.route("/services-by-date", methods=["GET"])
+def get_services_by_date():
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    services = service_service.get_services_by_date(start_date, end_date)
+    return jsonify(services)

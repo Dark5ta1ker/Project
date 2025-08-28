@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from app.services import BookingService
+from app.services import BookingManager
 
 bookings_bp = Blueprint("bookings", __name__)
-booking_service = BookingService()
+booking_service = BookingManager()
 
 @bookings_bp.route("/", methods=["GET"])
 def get_all_bookings():
